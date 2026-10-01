@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LexiSnap - 英文生字與句型鍛造平台</title>
+    <style>
+        * { box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Microsoft JhengHei, system-ui, sans-serif; 
+            background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 100%);
+            min-height: 100vh;
+            color: #2d3748; 
+            margin: 0; 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+        }
+        .container { 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px);
+            padding: 28px; 
+            border-radius: 18px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.12); 
+            max-width: 800px; 
+            width: 100%; 
+        }
+        .header { 
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 18px 24px;
+            border-radius: 14px;
+            color: white;
+            margin-bottom: 22px; 
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+        h1 { margin: 0; font-size: 24px; }
+        .btn-add { 
+            background: linear-gradient(135deg, #00b09b, #96c93d); 
+            color: white; 
+            padding: 10px 18px; 
+            border: none; 
+            border-radius: 20px; 
+            cursor: pointer; 
+            font-weight: bold; 
+            box-shadow: 0 3px 10px rgba(0, 176, 155, 0.3);
+            transition: transform 0.2s;
+        }
+        .btn-add:hover { transform: scale(1.05); }
+
+        /* 導覽列 */
+        .level-selector { display: flex; gap: 10px; margin-bottom: 22px; flex-wrap: wrap; }
+        .btn-level { 
+            flex: 1; 
+            min-width: 130px;
+            padding: 12px 10px; 
+            border: none; 
+            border-radius: 12px; 
+            color: white;
+            cursor: pointer; 
+            font-size: 15px; 
+            font-weight: bold; 
+            transition: all 0.2s ease; 
+            box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+            opacity: 0.85;
+        }
+        .btn-level:hover, .btn-level.active { opacity: 1; transform: translateY(-2px); box-shadow: 0 6px 15px rgba(0,0,0,0.15); }
+        .bg-lv1 { background: linear-gradient(135deg, #36D1DC, #5B86E5); }
+        .bg-lv2 { background: linear-gradient(135deg, #8E2DE2, #4A00E0); }
+        .bg-lv3 { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .bg-review { background: linear-gradient(135deg, #FF416C, #FF4B2B); }
+
+        /* 題目卡片 */
+        .question-card { 
+            background: #ffffff; 
+            border-radius: 12px; 
+            padding: 22px; 
+            margin-bottom: 18px; 
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border-left: 6px solid #667eea;
+        }
+        .badge {
+            display: inline-block;
+            padding: 3px 10px;
+            font-size: 12px;
+            font-weight: bold;
+            border-radius: 12px;
+            color: white;
+            margin-bottom: 8px;
+        }
+        .badge-vocab { background: #3182ce; }
+        .badge-pattern { background: #805ad5; }
+        .badge-review { background: #e53e3e; }
+
+        .paragraph-box {
+            font-size: 17px;
+            line-height: 2.2;
+            background: #f7fafc;
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid #e2e8f0;
+            margin-bottom: 15px;
+        }
+
+        .sentence-zh { color: #4a5568; font-size: 15px; margin-top: 10px; background: #edf2f7; padding: 12px; border-radius: 8px; line-height: 1.6; }
+        .input-group { display: flex; gap: 8px; margin-top: 12px; align-items: center; flex-wrap: wrap; }
+        
+        input[type="text"] { 
+            padding: 8px 12px; 
+            font-size: 16px; 
+            border: 2px solid #cbd5e0; 
+            border-radius: 8px; 
+            outline: none; 
+            transition: border-color 0.2s;
+        }
+        .cloze-input { width: 140px; margin: 0 4px; display: inline-block; }
+        input[type="text"]:focus { border-color: #667eea; }
+        
+        /* 按鈕 */
+        .btn-hint { background: linear-gradient(135deg, #f6d365, #fda085); color: #4a2d00; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 13px; }
+        .btn-check { background: linear-gradient(135deg, #84fab0, #8fd3f4); color: #06402b; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-remove { background: #e53e3e; color: white; border: none; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+        .btn-submit-all { width: 100%; background: linear-gradient(135deg, #11998e, #38ef7d); color: white; border: none; padding: 14px; font-size: 18px; border-radius: 10px; cursor: pointer; font-weight: bold; margin-top: 15px; box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3); }
+
+        .feedback { font-weight: bold; margin-top: 10px; font-size: 15px; }
+        .correct { color: #28a745; }
+        .wrong { color: #dc3545; }
+
+        /* Modal 上傳/拍照視窗 */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px); justify-content: center; align-items: center; z-index: 100; }
+        .modal-content { background: white; padding: 25px; border-radius: 16px; width: 90%; max-width: 550px; box-shadow: 0 10px 25px rgba(0,0,0,0.2); max-height: 90vh; overflow-y: auto; }
+        .photo-upload-box { border: 2px dashed #a0aec0; border-radius: 12px; padding: 20px; text-align: center; background: #f7fafc; margin-bottom: 15px; cursor: pointer; }
+        .photo-preview { max-width: 100%; max-height: 180px; border-radius: 8px; display: none; margin: 10px auto; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; margin-bottom: 4px; font-weight: bold; font-size: 14px; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #cbd5e0; border-radius: 8px; }
+        .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+        .btn-cancel { background: #cbd5e0; color: #4a5568; border: none; padding: 10px 16px; border-radius: 8px; cursor: pointer; font-weight: bold; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <h1>✨ LexiSnap 學習平台</h1>
+        <button class="btn-add" onclick="openModal()">📷 上傳/拍照筆記生字</button>
+    </div>
+
+    <div class="level-selector">
+        <button class="btn-level bg-lv1" onclick="startLevel(1)">Lv 1: 單字初探</button>
+        <button class="btn-level bg-lv2" onclick="startLevel(2)">Lv 2: 句型大師</button>
+        <button class="btn-level bg-lv3" onclick="startLevel(3)">Lv 3: 段落實戰</button>
+        <button class="btn-level bg-review" id="reviewBtn" onclick="startReviewZone()">🔥 重點溫習 (0)</button>
+    </div>
+
+    <div id="quiz-area">
+        <p style="text-align: center; color: #718096; padding: 30px 0;">請點擊上方關卡開始練習，答錯或按提示的字會自動放入「🔥 重點溫習」區！</p>
+    </div>
+</div>
+
+<!-- 新增與照片上傳 Modal -->
+<div class="modal" id="addModal">
+    <div class="modal-content">
+        <h3 style="margin-top:0; color:#4a5568;">📷 上傳筆記照片 / 手動新增生字</h3>
+        
+        <!-- 拍照 / 上傳區域 -->
+        <div class="photo-upload-box" onclick="document.getElementById('noteImageInput').click()">
+            <span style="font-size: 28px;">📸</span>
+            <p style="margin: 5px 0; font-weight: bold; color: #4a5568;">點擊拍照或上傳筆記圖片</p>
+            <span style="font-size: 12px; color: #a0aec0;">支援手機相機直接拍攝筆記</span>
+            <input type="file" id="noteImageInput" accept="image/*" capture="environment" style="display: none;" onchange="handleImageUpload(event)">
+            <img id="imagePreview" class="photo-preview" alt="筆記預覽">
+        </div>
+
+        <div class="form-group">
+            <label>類型</label>
+            <select id="newType">
+                <option value="vocab">單字 (Vocabulary)</option>
+                <option value="pattern">句型 (Sentence Pattern / S.P.)</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>英文單字 / 關鍵句型</label>
+            <input type="text" id="newWord" placeholder="例如: ubiquitous 或 It goes without saying that">
+        </div>
+        <div class="form-group">
+            <label>中文釋義 / 同義詞</label>
+            <input type="text" id="newHint" placeholder="例如: 無處不在的 / 不言而喻">
+        </div>
+        <div class="form-group">
+            <label>例句 (填空處請寫 [blank])</label>
+            <input type="text" id="newSentence" placeholder="Smartphones are [blank] in modern life.">
+        </div>
+        <div class="form-group">
+            <label>例句中文翻譯</label>
+            <input type="text" id="newSentenceZh" placeholder="智慧型手機在現代生活中無處不在。">
+        </div>
+        <div class="modal-actions">
+            <button class="btn-cancel" onclick="closeModal()">取消</button>
+            <button class="btn-add" onclick="saveNewItem()">儲存至字庫</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 預設字庫（整合筆記重點）
+    const initialData = [
+        { id: 1, type: "vocab", word: "ubiquitous", hint: "無處不在的 (替換 common)", sentence: "Smartphones have become [blank] in modern society.", sentenceZh: "智慧型手機在現代社會中已變得無處不在。" },
+        { id: 2, type: "vocab", word: "jeopardise", hint: "危及 / 損害 (替換 damage)", sentence: "Pollution will [blank] the health of local residents.", sentenceZh: "污染將會危及當地居民的健康。" },
+        { id: 3, type: "vocab", word: "debunk", hint: "揭穿 / 駁斥 (替換 claim is false)", sentence: "The report aims to [blank] the fake news circulating online.", sentenceZh: "這份報告旨在揭穿網絡上流傳的假新聞。" },
+        { id: 4, type: "vocab", word: "fraudulent", hint: "詐騙的 / 欺詐的 (替換 scam)", sentence: "He was arrested for conducting [blank] transactions.", sentenceZh: "他因進行欺詐交易而被捕。" },
+        { id: 5, type: "vocab", word: "perpetuate", hint: "使持續 / 長存 (替換 continue)", sentence: "This rule will only [blank] unfairness in school.", sentenceZh: "這條規則只會讓學校裡的不公持續下去。" },
+        { id: 6, type: "pattern", word: "It goes without saying that", hint: "不言而喻 / 毋庸置疑 (S.P.)", sentence: "[blank] education plays a crucial role in society.", sentenceZh: "不言而喻，教育在社會中扮演著關鍵角色。" },
+        { id: 7, type: "pattern", word: "In a hustle and bustle of the city", hint: "在繁華喧囂的城市中 (S.P.)", sentence: "[blank], people often feel overwhelmed by stress.", sentenceZh: "在繁華喧囂的城市中，人們常感到壓力山大。" },
+        { id: 8, type: "pattern", word: "shoulder responsibility", hint: "肩負責任 (S.P.)", sentence: "The government should [blank] for protecting the environment.", sentenceZh: "政府應該肩負起保護環境的責任。" },
+        { id: 9, type: "pattern", word: "spare no pains to", hint: "不遺餘力地... (S.P.)", sentence: "Teachers will [blank] help students achieve success.", sentenceZh: "老師們將不遺餘力地幫助學生取得成功。" }
+    ];
+
+    let database = JSON.parse(localStorage.getItem('lexisnap_db')) || initialData;
+    let reviewList = JSON.parse(localStorage.getItem('lexisnap_review')) || [];
+
+    function saveData() { localStorage.setItem('lexisnap_db', JSON.stringify(database)); }
+    function saveReviewData() { 
+        localStorage.setItem('lexisnap_review', JSON.stringify(reviewList)); 
+        updateReviewBadge();
+    }
+
+    function updateReviewBadge() {
+        document.getElementById('reviewBtn').innerText = `🔥 重點溫習 (${reviewList.length})`;
+    }
+
+    function addToReview(item) {
+        if (!item) return;
+        if (!reviewList.some(r => r.id === item.id)) {
+            reviewList.push(item);
+            saveReviewData();
+        }
+    }
+
+    function removeFromReview(id) {
+        reviewList = reviewList.filter(r => r.id !== id);
+        saveReviewData();
+        startReviewZone();
+    }
+
+    function shuffle(array) { return [...array].sort(() => Math.random() - 0.5); }
+
+    let currentQuestions = [];
+    let hintState = {};
+
+    function startLevel(level) {
+        hintState = {};
+        const quizArea = document.getElementById('quiz-area');
+        quizArea.innerHTML = '';
+
+        let pool = [];
+        if (level === 1) pool = database.filter(i => i.type === 'vocab');
+        else if (level === 2) pool = database.filter(i => i.type === 'pattern');
+        else if (level === 3) pool = database;
+
+        if (pool.length === 0) {
+            quizArea.innerHTML = `<p class="wrong" style="text-align:center;">該層級目前沒有資料，請點擊右上角拍照上傳新增！</p>`;
+            return;
+        }
+
+        currentQuestions = shuffle(pool).slice(0, 5);
+
+        if (level === 1) renderLevel1();
+        else if (level === 2) renderLevel2();
+        else if (level === 3) renderLevel3Paragraph();
+    }
+
+    // --- Level 1 ---
+    function renderLevel1() {
+        const quizArea = document.getElementById('quiz-area');
+        quizArea.innerHTML = '<h2>Level 1: 單字初探 (隨機抽考)</h2>';
+
+        currentQuestions.forEach((q, idx) => {
+            quizArea.innerHTML += `
+                <div class="question-card" style="border-left-color: #36D1DC;">
+                    <span class="badge badge-vocab">Vocabulary</span>
+                    <div><strong>題目 ${idx + 1}:</strong> ${q.hint}</div>
+                    <div class="input-group">
+                        <input type="text" id="input-${idx}" placeholder="輸入英文單字">
+                        <button class="btn-hint" onclick="giveHint(${idx}, 'input-${idx}')">💡 提示</button>
+                        <button class="btn-check" onclick="checkSingle(${idx}, 'input-${idx}', 'fb-${idx}')">提交</button>
+                    </div>
+                    <div class="feedback" id="fb-${idx}"></div>
+                </div>
+            `;
+        });
+    }
+
+    // --- Level 2 ---
+    function renderLevel2() {
+        const quizArea = document.getElementById('quiz-area');
+        quizArea.innerHTML = '<h2>Level 2: 句型大師 (S.P. 句構測驗)</h2>';
+
+        currentQuestions.forEach((q, idx) => {
+            let sentenceDisplay = q.sentence.replace('[blank]', `<u>&nbsp;&nbsp;_______&nbsp;&nbsp;</u>`);
+            quizArea.innerHTML += `
+                <div class="question-card" style="border-left-color: #8E2DE2;">
+                    <span class="badge badge-pattern">Sentence Pattern</span>
+                    <div><strong>句型提示:</strong> ${q.hint}</div>
+                    <div style="margin-top: 6px; font-size: 16px;">${sentenceDisplay}</div>
+                    <div class="sentence-zh">📍 翻譯：${q.sentenceZh}</div>
+                    <div class="input-group">
+                        <input type="text" id="input-${idx}" placeholder="填寫缺失的 S.P. 句型/關鍵字">
+                        <button class="btn-hint" onclick="giveHint(${idx}, 'input-${idx}')">💡 提示</button>
+                        <button class="btn-check" onclick="checkSingle(${idx}, 'input-${idx}', 'fb-${idx}')">提交</button>
+                    </div>
+                    <div class="feedback" id="fb-${idx}"></div>
+                </div>
+            `;
+        });
+    }
+
+    // --- Level 3: 完整微型短文段落 (Context Quest) ---
+    function renderLevel3Paragraph() {
+        const quizArea = document.getElementById('quiz-area');
+        quizArea.innerHTML = '<h2>Level 3: 語境實戰 (短文段落填空)</h2>';
+
+        let paragraphHTML = `<div class="question-card" style="border-left-color: #11998e;">
+            <div class="paragraph-box">`;
+
+        let translationHTML = `<div class="sentence-zh"><strong>📍 段落中文對照：</strong><br>`;
+
+        currentQuestions.forEach((q, idx) => {
+            let blankInput = `<input type="text" id="input-${idx}" class="cloze-input" placeholder="(${idx+1})">`;
+            let segmentText = q.sentence.replace('[blank]', blankInput);
+            paragraphHTML += `<strong>(${idx + 1})</strong> ${segmentText} `;
+            translationHTML += `<b>(${idx + 1})</b> ${q.sentenceZh} `;
+        });
+
+        paragraphHTML += `</div>` + translationHTML + `</div>`;
+
+        // 提示按鈕區
+        paragraphHTML += `<div style="margin: 15px 0; display:flex; gap:8px; flex-wrap:wrap;">`;
+        currentQuestions.forEach((q, idx) => {
+            paragraphHTML += `<button class="btn-hint" onclick="giveHint(${idx}, 'input-${idx}')">💡 提示第 (${idx + 1}) 空格</button>`;
+        });
+        paragraphHTML += `</div>`;
+
+        paragraphHTML += `
+            <button class="btn-submit-all" onclick="checkAllLevel3()">一次過提交全篇短文</button>
+            <div class="feedback" id="fb-l3" style="text-align:center; font-size: 18px; margin-top:12px;"></div>
+        </div>`;
+
+        quizArea.innerHTML = paragraphHTML;
+    }
+
+    // --- 🔥 重點溫習區 ---
+    function startReviewZone() {
+        hintState = {};
+        const quizArea = document.getElementById('quiz-area');
+        quizArea.innerHTML = '<h2>🔥 重點溫習區 (專攻曾錯或求助的題目)</h2>';
+
+        if (reviewList.length === 0) {
+            quizArea.innerHTML += `<p class="correct" style="text-align:center; font-size:18px; padding:30px;">🎉太棒了！目前溫習區是空的，代表你全掌握囉！</p>`;
+            return;
+        }
+
+        currentQuestions = [...reviewList];
+
+        currentQuestions.forEach((q, idx) => {
+            let badgeClass = q.type === 'vocab' ? 'badge-vocab' : 'badge-pattern';
+            let badgeText = q.type === 'vocab' ? 'Vocabulary' : 'Sentence Pattern';
+            quizArea.innerHTML += `
+                <div class="question-card" style="border-left-color: #FF416C;">
+                    <span class="badge ${badgeClass}">${badgeText}</span>
+                    <span class="badge badge-review">需要溫習</span>
+                    <div><strong>提示:</strong> ${q.hint}</div>
+                    <div class="sentence-zh">例句：${q.sentence.replace('[blank]', '____')} (${q.sentenceZh})</div>
+                    <div class="input-group">
+                        <input type="text" id="input-${idx}" placeholder="輸入答案進行複習">
+                        <button class="btn-hint" onclick="giveHint(${idx}, 'input-${idx}')">💡 提示</button>
+                        <button class="btn-check" onclick="checkSingle(${idx}, 'input-${idx}', 'fb-${idx}')">檢查</button>
+                        <button class="btn-remove" onclick="removeFromReview(${q.id})">✅ 已學會 (移除)</button>
+                    </div>
+                    <div class="feedback" id="fb-${idx}"></div>
+                </div>
+            `;
+        });
+    }
+
+    // 提示與自動溫習邏輯
+    function giveHint(qIdx, inputId) {
+        const item = currentQuestions[qIdx];
+        addToReview(item);
+
+        if (!hintState[qIdx]) hintState[qIdx] = 1;
+        else hintState[qIdx]++;
+
+        const inputElem = document.getElementById(inputId);
+        if (hintState[qIdx] <= item.word.length) {
+            inputElem.value = item.word.substring(0, hintState[qIdx]);
+        }
+    }
+
+    function checkSingle(qIdx, inputId, fbId) {
+        const item = currentQuestions[qIdx];
+        const val = document.getElementById(inputId).value.trim().toLowerCase();
+        const fb = document.getElementById(fbId);
+
+        if (val === item.word.toLowerCase()) {
+            fb.innerHTML = '✅ 完全正確！';
+            fb.className = 'feedback correct';
+        } else {
+            fb.innerHTML = `❌ 正確答案為: <strong>${item.word}</strong> (已加入溫習區)`;
+            fb.className = 'feedback wrong';
+            addToReview(item);
+        }
+    }
+
+    function checkAllLevel3() {
+        let correctCount = 0;
+        currentQuestions.forEach((q, idx) => {
+            const inputElem = document.getElementById(`input-${idx}`);
+            const val = inputElem.value.trim().toLowerCase();
+            if (val === q.word.toLowerCase()) {
+                inputElem.style.border = '2px solid #28a745';
+                inputElem.style.backgroundColor = '#f0fff4';
+                correctCount++;
+            } else {
+                inputElem.style.border = '2px solid #dc3545';
+                inputElem.style.backgroundColor = '#fff5f5';
+                addToReview(q);
+            }
+        });
+
+        const fb = document.getElementById('fb-l3');
+        if (correctCount === currentQuestions.length) {
+            fb.innerHTML = `🎉 太棒了！整篇短文 ${correctCount} 個空格完全正確！`;
+            fb.className = 'feedback correct';
+        } else {
+            fb.innerHTML = `答對 ${correctCount} / ${currentQuestions.length} 個空格（答錯的生字已加入重點溫習區）`;
+            fb.className = 'feedback wrong';
+        }
+    }
+
+    // --- Modal 與照片處理 ---
+    function openModal() { document.getElementById('addModal').style.display = 'flex'; }
+    function closeModal() { document.getElementById('addModal').style.display = 'none'; }
+
+    function handleImageUpload(event) {
+        const file = event.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.getElementById('imagePreview');
+                img.src = e.target.result;
+                img.style.display = 'block';
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+
+    function saveNewItem() {
+        const type = document.getElementById('newType').value;
+        const word = document.getElementById('newWord').value.trim();
+        const hint = document.getElementById('newHint').value.trim();
+        let sentence = document.getElementById('newSentence').value.trim();
+        const sentenceZh = document.getElementById('newSentenceZh').value.trim();
+
+        if (!word || !hint) {
+            alert('請填寫英文單字/句型與中文釋義！');
+            return;
+        }
+
+        const newItem = {
+            id: Date.now(),
+            type,
+            word,
+            hint,
+            sentence: sentence || "Practice makes perfect with [blank].",
+            sentenceZh: sentenceZh || "（無提供翻譯）"
+        };
+
+        database.push(newItem);
+        saveData();
+        alert('成功新增至字庫！');
+        closeModal();
+
+        document.getElementById('newWord').value = '';
+        document.getElementById('newHint').value = '';
+        document.getElementById('newSentence').value = '';
+        document.getElementById('newSentenceZh').value = '';
+        document.getElementById('imagePreview').style.display = 'none';
+    }
+
+    updateReviewBadge();
+</script>
+</body>
+</html>
